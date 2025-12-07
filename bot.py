@@ -1,42 +1,40 @@
-# bot.py → তোমার পুরানো কোডের ফাইনাল + QR + Always /start works
+# bot.py  →  Super Clean & Guaranteed Working (2025)
 import logging
 from uuid import uuid4
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
- CommandHandler,
- CallbackQueryHandler,
- MessageHandler,
- ConversationHandler,
- filters,
- ContextTypes,
+    CommandHandler,
+    CallbackQueryHandler,
+    MessageHandler,
+    ConversationHandler,
+    filters,
+    ContextTypes,
 )
 
 logging.basicConfig(level=logging.INFO)
+print("Bot is starting...")  # এটা দেখলে বুঝবে কোড রান হচ্ছে
 
-# ←←← শুধু এই লাইনগুলো চেক করো ←←←
-TOKEN = "8594094725:AAEtkG2hAgpn7oNxtp8uvrBiFwcaZ2d-oKA"
-ADMIN_ID = 1651695602
+# তোমার ডাটা এখানে বসাও
+TOKEN = "8594094725:AAEtkG2hAgpn7oNxtp8uvrBiFwcaZ2d-oKA"        # BotFather থেকে নাও
+ADMIN_ID = 1651695602                  # তোমার Telegram ID
 
-# ←←← QR চাইলে এখানে file_id বসাও (না থাকলে None রাখো) ←←←
-BKASH_QR_FILE_ID   = AgACAgUAAxkBAAEZYCZpNOTLIbUSloBZxDaXKjCU3cL53QACcQtrG-QSqFVIuPQ_B-XJLAEAAwIAA3gAAzYE   # উদা: "AgACAgUAAxkBAAIB9WcAAf..."
-BINANCE_QR_FILE_ID = AgACAgUAAxkBAAEZYD5pNPTN-OxDfgLAYhcyp4b6X3qJkAACRQtrG3d3qVXctWMRQ9uzrQEAAwIAA3gAAzYE   # উদা: "AgACAgUAAxkBAAIB9mcAAf..."
-
-BKASH   = "01815243007"
-BINANCE = "38017799"
-
-# তোমার পুরানো প্রাইস
+# Price
 P = {
-    "hotmail": {"bkash": 2.5,  "binance": 0.02},
-    "edu":     {"bkash": 2,    "binance": 0.016}
+    "hotmail": {"bkash": 2.5,   "binance": 0.02},
+    "edu":     {"bkash": 2,  "binance": 0.016}
 }
 
+BKASH = "01815243007"
+BINANCE = "38017799"
+
+# States
 CHOOSE_CAT, PAYMENT, QTY, CONFIRM, SCREENSHOT, TXID = range(6)
+
 orders = {}
 waiting = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data.clear()  # এটাই ম্যাজিক → যেকোনো সময় /start কাজ করবে
     kb = [
         [InlineKeyboardButton("Hotmail/Outlook", callback_data="cat_hotmail")],
         [InlineKeyboardButton(".EDU Mail",       callback_data="cat_edu")],
@@ -66,42 +64,17 @@ async def payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     curr = "৳" if method=="bKash" else "$"
     context.user_data.update({"method": method, "price": price, "curr": curr})
 
-    # ============ QR কোড যোগ করা হয়েছে ============
-    if method == "bKash" and BKASH_QR_FILE_ID:
-        await q.message.reply_photo(
-            photo=BKASH_QR_FILE_ID,
-            caption=f"*{context.user_data['cat']}*\n\n"
-                    f"Payment: *{method}*\n"
-                    f"Price: {curr}{price} per account\n\n"
-                    f"Scan QR or send to:\n`{BKASH}`\n\n"
-                    f"Enter quantity:",
-            parse_mode="Markdown"
-        )
-        await q.message.delete()
-
-    elif method == "Binance Pay" and BINANCE_QR_FILE_ID:
-        await q.message.reply_photo(
-            photo=BINANCE_QR_FILE_ID,
-            caption=f"*{context.user_data['cat']}*\n\n"
-                    f"Payment: *{method}*\n"
-                    f"Price: {curr}{price} per account\n\n"
-                    f"Scan QR with Binance App\n"
-                    f"Binance Pay ID: `{BINANCE}`\n\n"
-                    f"Enter quantity:",
-            parse_mode="Markdown"
-        )
-        await q.message.delete()
-
+    txt = f"*{context.user_data['cat']}*\n"
+    txt += f"Payment: {method} → {curr}{price}/acc\n\n"
+    if method == "bKash":
+        txt += f"Send to: `{BKASH}`\n"
     else:
-        txt = f"*{context.user_data['cat']}*\n"
-        txt += f"Payment: {method} → {curr}{price}/acc\n\n"
-        txt += f"Send to: `{BKASH if method=='bKash' else BINANCE}`\n\n"
-        txt += "Enter quantity:"
-        await q.edit_message_text(txt, parse_mode="Markdown")
-    # =================================================
+        txt += f"Binance ID: `{BINANCE}`\n"
+    txt += "\nEnter quantity:"
+
+    await q.edit_message_text(txt, parse_mode="Markdown")
     return QTY
 
-# বাকি সব ফাংশন তোমার পুরানো মতোই (কোনো বদল নাই)
 async def qty(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         q = int(update.message.text)
@@ -151,6 +124,7 @@ async def txid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(ADMIN_ID, f"Ready!\nID: {oid}\nTXID: {tid}\n→ /approve {oid}")
     return ConversationHandler.END
 
+# Admin approve
 async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
     try:
@@ -182,12 +156,11 @@ def main():
             PAYMENT:    [CallbackQueryHandler(payment, pattern="^pay_")],
             QTY:        [MessageHandler(filters.TEXT & ~filters.COMMAND, qty)],
             CONFIRM:    [CallbackQueryHandler(confirm, pattern="^(ok|no)$")],
-            SCREENSHOT: [MessageHandler(filters.PHOTO, screenshot)],
+            SCREENSHOT:  [MessageHandler(filters.PHOTO, screenshot)],
             TXID:       [MessageHandler(filters.TEXT & ~filters.COMMAND, txid)],
         },
         fallbacks=[],
-        allow_reentry=True   # ← এটাই গ্যারান্টি যে /start সবসময় কাজ করবে
-    )
+    allow_reentry=True)
 
     app.add_handler(conv)
     app.add_handler(CommandHandler("approve", approve))
