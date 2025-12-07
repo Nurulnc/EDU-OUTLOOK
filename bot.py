@@ -22,7 +22,7 @@ ADMIN_ID = 1651695602                  # তোমার Telegram ID
 # Price
 P = {
     "hotmail": {"bkash": 2.5,   "binance": 0.02},
-    "edu":     {"bkash": 2,  "binance": 0.016}
+    "edu":     {"bkash": 1.6,  "binance": 0.013}
 }
 
 BKASH = "01815243007"
