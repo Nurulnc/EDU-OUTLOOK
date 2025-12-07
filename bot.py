@@ -15,8 +15,8 @@ from telegram.ext import (
 TOKEN    = "8594094725:AAEtkG2hAgpn7oNxtp8uvrBiFwcaZ2d-oKA"  # তোমার টোকেন
 ADMIN_ID = 1651695602                                          # তোমার আইডি
 # QR চাইলে নিচে file_id বসাও, না চাইলে None রাখো
-BKASH_QR   = None
-BINANCE_QR = None
+BKASH_QR   = AgACAgUAAxkBAAEZYCZpNOTLIbUSloBZxDaXKjCU3cL53QACcQtrG-QSqFVIuPQ_B-XJLAEAAwIAA3gAAzYE
+BINANCE_QR = AgACAgUAAxkBAAEZYD5pNPTN-OxDfgLAYhcyp4b6X3qJkAACRQtrG3d3qVXctWMRQ9uzrQEAAwIAA3gAAzYE
 
 BKASH_NUM  = "01815243007"
 BINANCE_ID = "38017799"
