@@ -135,15 +135,29 @@ async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Use: /approve ABC123")
 
 async def excel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID or ADMIN_ID not in waiting: return
+    if update.effective_user.id != ADMIN_ID or ADMIN_ID not in waiting:
+        return
+    
     oid = waiting.pop(ADMIN_ID)
-    if not update.message.document or not update.message.document.file_name.endswith(".xlsx"):
-        await update.message.reply_text("Only .xlsx")
+    
+    # ←←← এই লাইনটাই বদলেছি (এখন .xlsx আর .csv দুটোই গ্রহণ করবে) ←←←
+    if not update.message.document or not update.message.document.file_name.lower().endswith(('.xlsx', '.csv')):
+        await update.message.reply_text("Only .xlsx or .csv file allowed!")
         waiting[ADMIN_ID] = oid
         return
-    await context.bot.send_document(orders[oid]["uid"], update.message.document.file_id,
-        f"Approved!\n{orders[oid]['cat']}\n{oid} × {orders[oid]['qty']} accounts")
-    await update.message.reply_text(f"Sent → {oid}")
+    
+    # বায়ারকে পাঠানোর সময় ফাইলের নাম দেখিয়ে দেবে
+    file_ext = ".CSV" if update.message.document.file_name.lower().endswith('.csv') else ".XLSX"
+    
+    await context.bot.send_document(
+        orders[oid]["uid"],
+        update.message.document.file_id,
+        caption=f"Approved!\n"
+                f"{orders[oid]['cat']}\n"
+                f"Order {oid} × {orders[oid]['qty']} accounts\n\n"
+                f"File attached ({file_ext})"
+    )
+    await update.message.reply_text(f"Sent → {oid} ({file_ext})")
     del orders[oid]
 
 def main():
