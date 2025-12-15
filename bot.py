@@ -20,10 +20,13 @@ ADMIN_ID = 1651695602                  # তোমার Telegram ID
 
 # Price (নতুন ক্যাটাগরি যোগ করা হয়েছে)
 P = {
-    "hotmail_trust": {"bkash": 2,    "binance": 0.016},  # ← পুরানো hotmail কে rename করা হয়েছে + Trust name
+    "hotmail_trust": {"bkash": 2,    "binance": 0.016},
     "edu":           {"bkash": 1,  "binance": 0.008},
     "android":       {"bkash": 5,    "binance": 0.04},
-    "outlook_trust": {"bkash": 2,    "binance": 0.016},  # ← নতুন: Outlook Trust category (price same as hotmail)
+    "outlook_trust": {"bkash": 2,    "binance": 0.016},
+    "hma_vpn":       {"bkash": 30,   "binance": 0.24},   # নতুন
+    "nord_vpn":      {"bkash": 30,   "binance": 0.24},   # নতুন
+    "express_vpn":   {"bkash": 30,   "binance": 0.24},   # নতুন
 }
 
 BKASH = "01815243007"
@@ -37,10 +40,13 @@ waiting = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kb = [
-        [InlineKeyboardButton("📬 Hotmail Trust", callback_data="cat_hotmail_trust")],  # ← Rename করা
+        [InlineKeyboardButton("📬 Hotmail Trust", callback_data="cat_hotmail_trust")],
         [InlineKeyboardButton("🎓 .EDU Mail (US)",     callback_data="cat_edu")],
         [InlineKeyboardButton("📩 Android Studio Mail", callback_data="cat_android")],
-        [InlineKeyboardButton("📧 Outlook Trust", callback_data="cat_outlook_trust")],  # ← নতুন বাটন
+        [InlineKeyboardButton("📧 Outlook Trust", callback_data="cat_outlook_trust")],
+        [InlineKeyboardButton("🔒 HMA VPN (7 days)", callback_data="cat_hma_vpn")],         # নতুন
+        [InlineKeyboardButton("🔒 Nord VPN (7 days)", callback_data="cat_nord_vpn")],       # নতুন
+        [InlineKeyboardButton("🔒 Express VPN (7 days)", callback_data="cat_express_vpn")], # নতুন
     ]
     await update.message.reply_text("Welcome!\nChoose category:", reply_markup=InlineKeyboardMarkup(kb))
     return CHOOSE_CAT
@@ -49,29 +55,33 @@ async def cat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
     
-    if q.data == "cat_hotmail_trust":
-        cat = "hotmail_trust"
-        name = "Hotmail Trust"
-    elif q.data == "cat_edu":
-        cat = "edu"
-        name = ".EDU Mail"
-    elif q.data == "cat_android":
-        cat = "android"
-        name = "Android Studio Mail"
-    elif q.data == "cat_outlook_trust":
-        cat = "outlook_trust"
-        name = "Outlook Trust"
-    else:
+    category_map = {
+        "cat_hotmail_trust": ("hotmail_trust", "Hotmail Trust"),
+        "cat_edu": ("edu", ".EDU Mail"),
+        "cat_android": ("android", "Android Studio Mail"),
+        "cat_outlook_trust": ("outlook_trust", "Outlook Trust"),
+        "cat_hma_vpn": ("hma_vpn", "HMA VPN"),
+        "cat_nord_vpn": ("nord_vpn", "Nord VPN"),
+        "cat_express_vpn": ("express_vpn", "Express VPN"),
+    }
+    
+    if q.data not in category_map:
         return  # invalid
     
-    context.user_data["cat"] = name
-    context.user_data["key"] = cat
+    cat_key, cat_name = category_map[q.data]
+    
+    context.user_data["cat"] = cat_name
+    context.user_data["key"] = cat_key
+    
+    # VPN হলে duration যোগ করি (শুধু display এর জন্য)
+    is_vpn = cat_key.endswith("_vpn")
+    duration_text = "\nDuration: 7 days" if is_vpn else ""
 
     kb = [
-        [InlineKeyboardButton(f"bKash ৳{P[cat]['bkash']}", callback_data="pay_bkash")],
-        [InlineKeyboardButton(f"Binance ${P[cat]['binance']}", callback_data="pay_binance")],
+        [InlineKeyboardButton(f"bKash ৳{P[cat_key]['bkash']}", callback_data="pay_bkash")],
+        [InlineKeyboardButton(f"Binance ${P[cat_key]['binance']}", callback_data="pay_binance")],
     ]
-    await q.edit_message_text(f"*{name}*\nSelect payment:", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
+    await q.edit_message_text(f"*{cat_name}*{duration_text}\nSelect payment:", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
     return PAYMENT
 
 async def payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -82,7 +92,10 @@ async def payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     curr = "৳" if method=="bKash" else "$"
     context.user_data.update({"method": method, "price": price, "curr": curr})
 
-    txt = f"*{context.user_data['cat']}*\n"
+    is_vpn = context.user_data["key"].endswith("_vpn")
+    duration_text = "\nDuration: 7 days" if is_vpn else ""
+
+    txt = f"*{context.user_data['cat']}*{duration_text}\n"
     txt += f"Payment: {method} → {curr}{price}/acc\n\n"
     if method == "bKash":
         txt += f"Send to: `{BKASH}`\n"
@@ -100,9 +113,13 @@ async def qty(update: Update, context: ContextTypes.DEFAULT_TYPE):
             raise ValueError
         context.user_data["qty"] = q
         total = q * context.user_data["price"]
+        
+        is_vpn = context.user_data["key"].endswith("_vpn")
+        duration_text = "\nDuration: 7 days" if is_vpn else ""
+        
         kb = [[InlineKeyboardButton("Confirm", callback_data="ok")], [InlineKeyboardButton("Cancel", callback_data="no")]]
         await update.message.reply_text(
-            f"*Summary*\n\n{context.user_data['cat']}\nQty: {q}\nTotal: {context.user_data['curr']}{total}\n\nConfirm?",
+            f"*Summary*\n\n{context.user_data['cat']}{duration_text}\nQty: {q}\nTotal: {context.user_data['curr']}{total}\n\nConfirm?",
             parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb)
         )
         return CONFIRM
@@ -119,8 +136,12 @@ async def confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     oid = str(uuid4())[:8].upper()
     orders[oid] = {**context.user_data, "uid": update.effective_user.id, "user": update.effective_user.username or "User"}
+    
+    is_vpn = context.user_data["key"].endswith("_vpn")
+    duration_text = "\nDuration: 7 days" if is_vpn else ""
+    
     await q.edit_message_text(f"Order ID: `{oid}`\nSend payment screenshot", parse_mode="Markdown")
-    await context.bot.send_message(ADMIN_ID, f"New Order {oid}\n{context.user_data['cat']} × {context.user_data['qty']} = {context.user_data['curr']}{context.user_data['qty']*context.user_data['price']}\nUser: @{orders[oid]['user']}")
+    await context.bot.send_message(ADMIN_ID, f"New Order {oid}\n{context.user_data['cat']} × {context.user_data['qty']} = {context.user_data['curr']}{context.user_data['qty']*context.user_data['price']}{duration_text}\nUser: @{orders[oid]['user']}")
     return SCREENSHOT
 
 async def screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -165,10 +186,13 @@ async def excel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     file_ext = ".CSV" if update.message.document.file_name.lower().endswith('.csv') else ".XLSX"
     
+    is_vpn = orders[oid]["key"].endswith("_vpn")
+    duration_text = "\nDuration: 7 days" if is_vpn else ""
+    
     await context.bot.send_document(
         orders[oid]["uid"],
         update.message.document.file_id,
-        caption=f"Approved!\n"
+        caption=f"Approved!{duration_text}\n"
                 f"{orders[oid]['cat']}\n"
                 f"Order {oid} × {orders[oid]['qty']} accounts\n\n"
                 f"File attached ({file_ext})"
