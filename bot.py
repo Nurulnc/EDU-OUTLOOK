@@ -1,4 +1,4 @@
-# bot.py  →  Super Clean & Guaranteed Working (2025)
+# bot.py  →  Super Clean & Guaranteed Working (2025) + Android Studio Mail Added
 import logging
 from uuid import uuid4
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -19,10 +19,11 @@ print("Bot is starting...")  # এটা দেখলে বুঝবে কো�
 TOKEN = "8594094725:AAEtkG2hAgpn7oNxtp8uvrBiFwcaZ2d-oKA"        # BotFather থেকে নাও
 ADMIN_ID = 1651695602                  # তোমার Telegram ID
 
-# Price
+# Price (নতুন ক্যাটাগরি যোগ করা হয়েছে)
 P = {
-    "hotmail": {"bkash": 2,   "binance": 0.016},
-    "edu":     {"bkash": 1.6,  "binance": 0.013}
+    "hotmail": {"bkash": 2,    "binance": 0.016},
+    "edu":     {"bkash": 1,  "binance": 0.008},
+    "android": {"bkash": 5,    "binance": 0.04}   # ← নতুন: Android Studio Mail
 }
 
 BKASH = "01815243007"
@@ -36,8 +37,9 @@ waiting = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kb = [
-        [InlineKeyboardButton("Hotmail/Outlook", callback_data="cat_hotmail")],
-        [InlineKeyboardButton(".EDU Mail",       callback_data="cat_edu")],
+        [InlineKeyboardButton("📬 Hotmail/Outlook", callback_data="cat_hotmail")],
+        [InlineKeyboardButton("🎓 .EDU Mail",       callback_data="cat_edu")],
+        [InlineKeyboardButton("📩 Android Studio Mail", callback_data="cat_android")],  # ← নতুন বাটন
     ]
     await update.message.reply_text("Welcome!\nChoose category:", reply_markup=InlineKeyboardMarkup(kb))
     return CHOOSE_CAT
@@ -45,15 +47,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
-    cat = "hotmail" if q.data == "cat_hotmail" else "edu"
-    context.user_data["cat"] = "Hotmail/Outlook" if cat == "hotmail" else ".EDU Mail"
+    
+    if q.data == "cat_hotmail":
+        cat = "hotmail"
+        name = "Hotmail/Outlook"
+    elif q.data == "cat_edu":
+        cat = "edu"
+        name = ".EDU Mail"
+    else:  # cat_android
+        cat = "android"
+        name = "Android Studio Mail"
+    
+    context.user_data["cat"] = name
     context.user_data["key"] = cat
 
     kb = [
         [InlineKeyboardButton(f"bKash ৳{P[cat]['bkash']}", callback_data="pay_bkash")],
         [InlineKeyboardButton(f"Binance ${P[cat]['binance']}", callback_data="pay_binance")],
     ]
-    await q.edit_message_text(f"*{context.user_data['cat']}*\nSelect payment:", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
+    await q.edit_message_text(f"*{name}*\nSelect payment:", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
     return PAYMENT
 
 async def payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -130,7 +142,7 @@ async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         oid = context.args[0].upper()
         waiting[ADMIN_ID] = oid
-        await update.message.reply_text(f"Send .xlsx file for {oid}")
+        await update.message.reply_text(f"Send .xlsx or .csv file for {oid}")
     except:
         await update.message.reply_text("Use: /approve ABC123")
 
@@ -140,13 +152,11 @@ async def excel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     oid = waiting.pop(ADMIN_ID)
     
-    # ←←← এই লাইনটাই বদলেছি (এখন .xlsx আর .csv দুটোই গ্রহণ করবে) ←←←
     if not update.message.document or not update.message.document.file_name.lower().endswith(('.xlsx', '.csv')):
         await update.message.reply_text("Only .xlsx or .csv file allowed!")
         waiting[ADMIN_ID] = oid
         return
     
-    # বায়ারকে পাঠানোর সময় ফাইলের নাম দেখিয়ে দেবে
     file_ext = ".CSV" if update.message.document.file_name.lower().endswith('.csv') else ".XLSX"
     
     await context.bot.send_document(
@@ -170,11 +180,11 @@ def main():
             PAYMENT:    [CallbackQueryHandler(payment, pattern="^pay_")],
             QTY:        [MessageHandler(filters.TEXT & ~filters.COMMAND, qty)],
             CONFIRM:    [CallbackQueryHandler(confirm, pattern="^(ok|no)$")],
-            SCREENSHOT:  [MessageHandler(filters.PHOTO, screenshot)],
+            SCREENSHOT: [MessageHandler(filters.PHOTO, screenshot)],
             TXID:       [MessageHandler(filters.TEXT & ~filters.COMMAND, txid)],
         },
         fallbacks=[],
-    allow_reentry=True)
+        allow_reentry=True)
 
     app.add_handler(conv)
     app.add_handler(CommandHandler("approve", approve))
