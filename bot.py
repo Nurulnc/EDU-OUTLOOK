@@ -1,4 +1,3 @@
-# bot.py  →  Super Clean & Guaranteed Working (2025) + Android Studio Mail Added
 import logging
 from uuid import uuid4
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -21,9 +20,10 @@ ADMIN_ID = 1651695602                  # তোমার Telegram ID
 
 # Price (নতুন ক্যাটাগরি যোগ করা হয়েছে)
 P = {
-    "hotmail": {"bkash": 2,    "binance": 0.016},
-    "edu":     {"bkash": 1,  "binance": 0.008},
-    "android": {"bkash": 5,    "binance": 0.04}   # ← নতুন: Android Studio Mail
+    "hotmail_trust": {"bkash": 2,    "binance": 0.016},  # ← পুরানো hotmail কে rename করা হয়েছে + Trust name
+    "edu":           {"bkash": 1,  "binance": 0.008},
+    "android":       {"bkash": 5,    "binance": 0.04},
+    "outlook_trust": {"bkash": 2,    "binance": 0.016},  # ← নতুন: Outlook Trust category (price same as hotmail)
 }
 
 BKASH = "01815243007"
@@ -37,9 +37,10 @@ waiting = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kb = [
-        [InlineKeyboardButton("📬 Hotmail/Outlook", callback_data="cat_hotmail")],
-        [InlineKeyboardButton("🎓 .EDU Mail",       callback_data="cat_edu")],
-        [InlineKeyboardButton("📩 Android Studio Mail", callback_data="cat_android")],  # ← নতুন বাটন
+        [InlineKeyboardButton("📬 Hotmail Trust", callback_data="cat_hotmail_trust")],  # ← Rename করা
+        [InlineKeyboardButton("🎓 .EDU Mail (US)",     callback_data="cat_edu")],
+        [InlineKeyboardButton("📩 Android Studio Mail", callback_data="cat_android")],
+        [InlineKeyboardButton("📧 Outlook Trust", callback_data="cat_outlook_trust")],  # ← নতুন বাটন
     ]
     await update.message.reply_text("Welcome!\nChoose category:", reply_markup=InlineKeyboardMarkup(kb))
     return CHOOSE_CAT
@@ -48,15 +49,20 @@ async def cat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
     
-    if q.data == "cat_hotmail":
-        cat = "hotmail"
-        name = "Hotmail/Outlook"
+    if q.data == "cat_hotmail_trust":
+        cat = "hotmail_trust"
+        name = "Hotmail Trust"
     elif q.data == "cat_edu":
         cat = "edu"
         name = ".EDU Mail"
-    else:  # cat_android
+    elif q.data == "cat_android":
         cat = "android"
         name = "Android Studio Mail"
+    elif q.data == "cat_outlook_trust":
+        cat = "outlook_trust"
+        name = "Outlook Trust"
+    else:
+        return  # invalid
     
     context.user_data["cat"] = name
     context.user_data["key"] = cat
