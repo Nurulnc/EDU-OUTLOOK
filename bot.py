@@ -73,13 +73,13 @@ async def cat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["key"] = cat_key
     
     is_vpn = cat_key.endswith("_vpn")
-    duration_text = "\nমেয়াদ: ৭ দিন" if is_vpn else ""
+    duration_text = "\n মেয়াদ: ৭ দিন" if is_vpn else ""
 
     kb = [
-        [InlineKeyboardButton(f"বিকাশ ৳{P[cat_key]['bkash']}", callback_data="pay_bkash")],
-        [InlineKeyboardButton(f"বিনান্স ${P[cat_key]['binance']}", callback_data="pay_binance")],
+        [InlineKeyboardButton(f"💳বিকাশ ৳{P[cat_key]['bkash']}", callback_data="pay_bkash")],
+        [InlineKeyboardButton(f"💳বিনান্স ${P[cat_key]['binance']}", callback_data="pay_binance")],
     ]
-    await q.edit_message_text(f"*{cat_name}*{duration_text}\nপেমেন্ট মেথড নির্বাচন করুন:", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
+    await q.edit_message_text(f"*{cat_name}*{duration_text}\n🏛️পেমেন্ট মেথড নির্বাচন করুন:", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
     return PAYMENT
 
 async def payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -99,7 +99,7 @@ async def payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         txt += f"নম্বরে পাঠান: `{BKASH}`\n"
     else:
         txt += f"বিনান্স আইডি: `{BINANCE}`\n"
-    txt += "\nকতগুলো অ্যাকাউন্ট লাগবে? (সংখ্যা লিখুন):"
+    txt += "\n✍কতগুলো অ্যাকাউন্ট লাগবে? (সংখ্যা লিখুন):"
 
     await q.edit_message_text(txt, parse_mode="Markdown")
     return QTY
@@ -113,9 +113,9 @@ async def qty(update: Update, context: ContextTypes.DEFAULT_TYPE):
         total = q * context.user_data["price"]
         
         is_vpn = context.user_data["key"].endswith("_vpn")
-        duration_text = "\nমেয়াদ: ৭ দিন" if is_vpn else ""
+        duration_text = "\n⏳মেয়াদ: ৭ দিন" if is_vpn else ""
         
-        kb = [[InlineKeyboardButton("কনফার্ম করুন", callback_data="ok")], [InlineKeyboardButton("বাতিল করুন", callback_data="no")]]
+        kb = [[InlineKeyboardButton("✅কনফার্ম করুন", callback_data="ok")], [InlineKeyboardButton("⛔বাতিল করুন", callback_data="no")]]
         await update.message.reply_text(
             f"*অর্ডার সারাংশ*\n\n{context.user_data['cat']}{duration_text}\nপরিমাণ: {q} টি\nমোট টাকা: {context.user_data['curr']}{total}\n\nকনফার্ম করবেন?",
             parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb)
@@ -129,14 +129,14 @@ async def confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
     if q.data == "no":
-        await q.edit_message_text("অর্ডার বাতিল করা হয়েছে।")
+        await q.edit_message_text("⛔অর্ডার বাতিল করা হয়েছে।")
         return ConversationHandler.END
 
     oid = str(uuid4())[:8].upper()
     orders[oid] = {**context.user_data, "uid": update.effective_user.id, "user": update.effective_user.username or "User"}
     
     is_vpn = context.user_data["key"].endswith("_vpn")
-    duration_text = "\nমেয়াদ: ৭ দিন" if is_vpn else ""
+    duration_text = "\n⏳মেয়াদ: ৭ দিন" if is_vpn else ""
     
     await q.edit_message_text(f"অর্ডার আইডি: `{oid}`\nএখন পেমেন্টের স্ক্রিনশট পাঠান", parse_mode="Markdown")
     await context.bot.send_message(ADMIN_ID, f"নতুন অর্ডার {oid}\n{context.user_data['cat']} × {context.user_data['qty']} = {context.user_data['curr']}{context.user_data['qty']*context.user_data['price']}{duration_text}\nইউজার: @{orders[oid]['user']}")
@@ -186,7 +186,7 @@ async def excel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file_ext = ".CSV" if update.message.document.file_name.lower().endswith('.csv') else ".XLSX"
     
     is_vpn = orders[oid]["key"].endswith("_vpn")
-    duration_text = "\nমেয়াদ: ৭ দিন" if is_vpn else ""
+    duration_text = "\n⏳মেয়াদ: ৭ দিন" if is_vpn else ""
     
     await context.bot.send_document(
         orders[oid]["uid"],
