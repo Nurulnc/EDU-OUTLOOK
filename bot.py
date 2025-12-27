@@ -57,9 +57,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "প্রিমিয়াম মেইল, ভিপিএন এবং প্রক্সি পাবেন সাশ্রয়ী মূল্যে।\n\n"
         "🛒 *সার্ভিস বেছে নিন:* "
     )
+    # Clear user data for a fresh start
+    context.user_data.clear()
+    
     if update.message:
         await update.message.reply_text(welcome_text, parse_mode="Markdown", reply_markup=get_main_menu())
     else:
+        # For callback query (Order More button)
         await update.callback_query.edit_message_text(welcome_text, parse_mode="Markdown", reply_markup=get_main_menu())
     return CHOOSE_CAT
 
@@ -147,7 +151,6 @@ async def get_txid(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(kb)
     )
     
-    # অ্যাডমিনের জন্য ক্লিক-টু-কপি ফরম্যাট
     admin_instruction = (
         f"💸 *TrxID জমা পড়েছে!*\n"
         f"🆔 ID: `{oid}`\n"
@@ -159,7 +162,6 @@ async def get_txid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(ADMIN_ID, admin_instruction, parse_mode="Markdown")
     return ConversationHandler.END
 
-# --- অ্যাডমিন অ্যাপ্রুভ (বট ডেলিভারি মেসেজ আপডেট করা হয়েছে) ---
 async def approve_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
     if not context.args: return
@@ -167,8 +169,8 @@ async def approve_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if oid not in orders: return
     order_info = orders.get(oid)
 
-    # পুনরায় অর্ডার করার জন্য বাটন
-    order_more_kb = InlineKeyboardMarkup([[InlineKeyboardButton("🛒 আরও অর্ডার করুন (Order More)", callback_data="back_to_start")]])
+    # পুনরায় অর্ডার করার বাটন
+    order_more_kb = InlineKeyboardMarkup([[InlineKeyboardButton("🛒 আরও অর্ডার করুন ", callback_data="back_to_start")]])
 
     if len(context.args) > 1:
         cd_key = " ".join(context.args[1:])
@@ -188,7 +190,6 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID or ADMIN_ID not in waiting: return
     oid = waiting.pop(ADMIN_ID); order_info = orders.get(oid)
     
-    # পুনরায় অর্ডার করার জন্য বাটন
     order_more_kb = InlineKeyboardMarkup([[InlineKeyboardButton("🛒 আরও অর্ডার করুন (Order More)", callback_data="back_to_start")]])
 
     caption = (
@@ -209,8 +210,9 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
+    
     conv = ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
+        entry_points=[CommandHandler("start", start), CallbackQueryHandler(start, pattern="back_to_start")],
         states={
             CHOOSE_CAT: [CallbackQueryHandler(cat_selection, pattern="^cat_"), CallbackQueryHandler(cat_selection, pattern="main_abc"), CallbackQueryHandler(start, pattern="back_to_start")],
             PAYMENT:    [CallbackQueryHandler(payment_method, pattern="^pay_"), CallbackQueryHandler(start, pattern="back_to_start")],
@@ -220,10 +222,17 @@ def main():
             TXID:       [MessageHandler(filters.TEXT & ~filters.COMMAND, get_txid)],
         },
         fallbacks=[CommandHandler("start", start)],
+        allow_reentry=True # Allows users to restart conversation while in a state
     )
+    
+    # এটি কনভারসেশনের বাইরের হ্যান্ডলার যা 'Order More' বাটনের কাজ নিশ্চিত করবে
+    app.add_handler(CallbackQueryHandler(start, pattern="back_to_start"))
     app.add_handler(conv)
+    
     app.add_handler(CommandHandler("approve", approve_order))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
+    
+    print("🤖 বোট সফলভাবে চালু হয়েছে...")
     app.run_polling()
 
 if __name__ == "__main__":
