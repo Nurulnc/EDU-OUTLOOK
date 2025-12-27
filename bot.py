@@ -20,7 +20,6 @@ ADMIN_ID = 1651695602
 BKASH = "01815243007"
 BINANCE = "38017799"
 
-# আপনার সাপোর্ট লিংকগুলো এখানে দিন
 SUPPORT_BOT = "https://t.me/mailmarketplaceSupport_bot"
 UPDATE_CHANNEL = "https://t.me/mailmarketplace"
 
@@ -44,32 +43,40 @@ waiting = {}
 # --- ইউটিলিটি ফাংশন ---
 def get_main_menu():
     buttons = []
+    # Regular Products
     for key, info in PRODUCTS.items():
         if "is_proxy" not in info:
             buttons.append([InlineKeyboardButton(info["name"], callback_data=f"cat_{key}")])
+    # Proxy Section
     buttons.append([InlineKeyboardButton("📦 ABCProxy (Residential)", callback_data="main_abc")])
     return InlineKeyboardMarkup(buttons)
 
 # --- হ্যান্ডলারস ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    welcome_text = (
-        "👋 *স্বাগতম আমাদের শপে!*\n\n"
-        "প্রিমিয়াম মেইল, ভিপিএন এবং প্রক্সি পাবেন সাশ্রয়ী মূল্যে।\n\n"
-        "🛒 *সার্ভিস বেছে নিন:* "
-    )
     # Clear user data for a fresh start
     context.user_data.clear()
     
-    if update.message:
-        await update.message.reply_text(welcome_text, parse_mode="Markdown", reply_markup=get_main_menu())
-    else:
-        # For callback query (Order More button)
+    welcome_text = (
+        "👋 *স্বাগতম আমাদের শপে!*\n\n"
+        "প্রিমিয়াম মেইল, ভিপিএন এবং প্রক্সি পাবেন সাশ্রয়ী মূল্যে।\n\n"
+        "🛒 *সার্ভিস বেছে নিন:*"
+    )
+    
+    if update.callback_query:
+        await update.callback_query.answer()
         await update.callback_query.edit_message_text(welcome_text, parse_mode="Markdown", reply_markup=get_main_menu())
+    else:
+        await update.message.reply_text(welcome_text, parse_mode="Markdown", reply_markup=get_main_menu())
+    
     return CHOOSE_CAT
 
 async def cat_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    
+    if query.data == "back_to_start":
+        return await start(update, context)
+
     if query.data == "main_abc":
         buttons = [
             [InlineKeyboardButton("🚀 1GB Proxy - 200 TK", callback_data="cat_abc_1gb")],
@@ -78,51 +85,91 @@ async def cat_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         await query.edit_message_text("📂 *ABCProxy সাব-ক্যাটাগরি:*", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(buttons))
         return CHOOSE_CAT
+
     cat_key = query.data.replace("cat_", "")
     product = PRODUCTS[cat_key]
     context.user_data.update({"key": cat_key, "name": product["name"]})
-    kb = [[InlineKeyboardButton("💳 বিকাশ", callback_data="pay_bkash")],
-          [InlineKeyboardButton("💳 বিনান্স", callback_data="pay_binance")],
-          [InlineKeyboardButton("🔙 ফিরে যান", callback_data="back_to_start")]]
-    await query.edit_message_text(f"✨ *সার্ভিস:* {product['name']}\n💰 বিকাশ: {product['bkash']} BDT\n💰 বিনান্স: ${product['binance']}\n\n💳 পেমেন্ট মেথড বেছে নিন:", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
+    
+    kb = [
+        [InlineKeyboardButton("💳 বিকাশ", callback_data="pay_bkash"), InlineKeyboardButton("💳 বিনান্স", callback_data="pay_binance")],
+        [InlineKeyboardButton("🔙 ফিরে যান", callback_data="back_to_start")]
+    ]
+    
+    await query.edit_message_text(
+        f"✨ *সার্ভিস:* {product['name']}\n💰 বিকাশ: {product['bkash']} BDT\n💰 বিনান্স: ${product['binance']}\n\n💳 পেমেন্ট মেথড বেছে নিন:", 
+        parse_mode="Markdown", 
+        reply_markup=InlineKeyboardMarkup(kb)
+    )
     return PAYMENT
 
 async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    if query.data == "back_to_start": return await start(update, context)
+    
+    if query.data == "back_to_start":
+        return await start(update, context)
+        
     method = "বিকাশ" if query.data == "pay_bkash" else "বিনান্স পে"
     key = context.user_data["key"]
     price = PRODUCTS[key]["bkash" if "bkash" in query.data else "binance"]
     currency = "৳" if "bkash" in query.data else "$"
+    
     context.user_data.update({"method": method, "price": price, "curr": currency})
-    instr = f"📍 *পেমেন্ট ডিটেইলস ({method})*\n━━━━━━━━━━━━━━━━━━\n"
-    instr += f"📞 নম্বর/আইডি: `{BKASH if method=='বিকাশ' else BINANCE}`\n"
-    instr += f"💵 রেট: {currency}{price}/পিস\n\n✍️ *কয়টি লাগবে?* (সংখ্যা লিখুন)"
+    
+    instr = (
+        f"📍 *পেমেন্ট ডিটেইলস ({method})*\n━━━━━━━━━━━━━━━━━━\n"
+        f"📞 নম্বর/আইডি: `{BKASH if method=='বিকাশ' else BINANCE}`\n"
+        f"💵 রেট: {currency}{price}/পিস\n\n"
+        f"✍️ *কয়টি লাগবে?* (শুধু সংখ্যা লিখে পাঠান)"
+    )
     await query.edit_message_text(instr, parse_mode="Markdown")
     return QTY
 
 async def get_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        qty = int(update.message.text); context.user_data["qty"] = qty
-        total = round(qty * context.user_data["price"], 3); context.user_data["total"] = total
-        summary = (f"📝 *অর্ডারের বিবরণ*\n📦 পণ্য: {context.user_data['name']}\n🔢 পরিমাণ: {qty} টি\n💰 মোট: {context.user_data['curr']}{total}\n\n✅ নিশ্চিত করতে চান?")
-        kb = [[InlineKeyboardButton("✅ হ্যাঁ", callback_data="confirm_ok")],[InlineKeyboardButton("❌ বাতিল", callback_data="back_to_start")]]
-        await update.message.reply_text(summary, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
-        return CONFIRM
-    except: return QTY
+    text = update.message.text
+    if not text.isdigit():
+        await update.message.reply_text("❌ অনুগ্রহ করে শুধু সংখ্যা পাঠান (যেমন: 5)")
+        return QTY
+        
+    qty = int(text)
+    context.user_data["qty"] = qty
+    total = round(qty * context.user_data["price"], 3)
+    context.user_data["total"] = total
+    
+    summary = (
+        f"📝 *অর্ডারের বিবরণ*\n"
+        f"📦 পণ্য: {context.user_data['name']}\n"
+        f"🔢 পরিমাণ: {qty} টি\n"
+        f"💰 মোট: {context.user_data['curr']}{total}\n\n"
+        f"✅ আপনি কি এই অর্ডারটি নিশ্চিত করতে চান?"
+    )
+    kb = [[InlineKeyboardButton("✅ হ্যাঁ", callback_data="confirm_ok"), InlineKeyboardButton("❌ বাতিল", callback_data="back_to_start")]]
+    await update.message.reply_text(summary, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
+    return CONFIRM
 
 async def process_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query; await query.answer()
-    oid = str(uuid4())[:8].upper(); context.user_data["oid"] = oid
-    await query.edit_message_text(f"🚀 *ID:* `{oid}`\nএখন পেমেন্ট স্ক্রিনশট পাঠান।", parse_mode="Markdown")
+    query = update.callback_query
+    await query.answer()
+    
+    if query.data == "back_to_start":
+        return await start(update, context)
+        
+    oid = str(uuid4())[:8].upper()
+    context.user_data["oid"] = oid
+    await query.edit_message_text(f"🚀 *অর্ডার আইডি:* `{oid}`\n\nএখন পেমেন্টের স্ক্রিনশট পাঠান।", parse_mode="Markdown")
     return SCREENSHOT
 
 async def get_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message.photo: return SCREENSHOT
-    photo_id = update.message.photo[-1].file_id; oid = context.user_data["oid"]
+    if not update.message.photo:
+        await update.message.reply_text("❌ অনুগ্রহ করে ছবি (Screenshot) পাঠান।")
+        return SCREENSHOT
+        
+    photo_id = update.message.photo[-1].file_id
+    oid = context.user_data["oid"]
     orders[oid] = {**context.user_data, "uid": update.effective_user.id, "username": update.effective_user.username}
-    await update.message.reply_text("✅ এখন পেমেন্টের *TrxID* লিখে পাঠান:")
+    
+    await update.message.reply_text("✅ স্ক্রিনশট পাওয়া গেছে। এখন পেমেন্টের *TrxID* লিখে পাঠান:")
+    
     admin_msg = (
         f"🔔 *নতুন অর্ডার!* \n"
         f"🆔 ID: `{oid}`\n"
@@ -135,18 +182,17 @@ async def get_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_txid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     txid = update.message.text.strip()
-    oid = context.user_data["oid"]
+    oid = context.user_data.get("oid")
     
     kb = [
-        [InlineKeyboardButton("👨‍💻 Contact Support", url=SUPPORT_BOT)],
-        [InlineKeyboardButton("📢 Join Update Channel", url=UPDATE_CHANNEL)]
+        [InlineKeyboardButton("👨‍💻 সাপোর্ট", url=SUPPORT_BOT), InlineKeyboardButton("📢 চ্যানেল", url=UPDATE_CHANNEL)]
     ]
     
     await update.message.reply_text(
         f"✅ *অর্ডার জমা হয়েছে!*\n\n"
-        f"🆔 অর্ডার আইডি: `{oid}`\n"
-        f"⏳ স্ট্যাটাস: ভেরিফিকেশন চলছে...\n\n"
-        f"অ্যাডমিন আপনার পেমেন্ট চেক করে কিছুক্ষণের মধ্যে ডেলিভারি দিবে।",
+        f"🆔 আইডি: `{oid}`\n"
+        f"⏳ স্ট্যাটাস: যাচাই করা হচ্ছে...\n\n"
+        f"অ্যাডমিন চেক করে কিছুক্ষণের মধ্যে ডেলিভারি দিবে।",
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup(kb)
     )
@@ -155,48 +201,55 @@ async def get_txid(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"💸 *TrxID জমা পড়েছে!*\n"
         f"🆔 ID: `{oid}`\n"
         f"🔗 TrxID: `{txid}`\n\n"
-        f"👇 *Click to Copy Commands:*\n"
-        f"✅ Key: `/approve {oid} `\n"
-        f"📁 File: `/approve {oid}`"
+        f"✅ কি দিতে: `/approve {oid} key` \n"
+        f"📁 ফাইল দিতে: `/approve {oid}`"
     )
     await context.bot.send_message(ADMIN_ID, admin_instruction, parse_mode="Markdown")
     return ConversationHandler.END
 
+# --- এডমিন ফাংশনস ---
 async def approve_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
     if not context.args: return
+    
     oid = context.args[0].upper()
-    if oid not in orders: return
-    order_info = orders.get(oid)
-
-    # পুনরায় অর্ডার করার বাটন
-    order_more_kb = InlineKeyboardMarkup([[InlineKeyboardButton("🛒 আরও অর্ডার করুন ", callback_data="back_to_start")]])
+    if oid not in orders:
+        await update.message.reply_text("❌ এই আইডিটি পাওয়া যায়নি।")
+        return
+        
+    order_info = orders[oid]
+    order_more_kb = InlineKeyboardMarkup([[InlineKeyboardButton("🛒 আরও অর্ডার করুন", callback_data="back_to_start")]])
 
     if len(context.args) > 1:
         cd_key = " ".join(context.args[1:])
         text = (
-            f"🎉 *অর্ডার সফলভাবে ডেলিভারি করা হয়েছে!*\n"
+            f"🎉 *অর্ডার ডেলিভারি করা হয়েছে!*\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"📦 পণ্য: {order_info['name']}\n"
             f"🔑 *Key:* `{cd_key}`\n\n"
-            f"🙏 আমাদের থেকে কেনাকাটা করার জন্য আপনাকে অসংখ্য ধন্যবাদ। আপনার দিনটি শুভ হোক!"
+            f"ধন্যবাদ আমাদের সাথে থাকার জন্য!"
         )
         await context.bot.send_message(chat_id=order_info["uid"], text=text, parse_mode="Markdown", reply_markup=order_more_kb)
-        await update.message.reply_text(f"✅ Key delivered for ID: {oid}"); del orders[oid]
+        await update.message.reply_text(f"✅ Key delivered for ID: {oid}")
+        del orders[oid]
     else:
-        waiting[ADMIN_ID] = oid; await update.message.reply_text(f"📁 ফাইল পাঠান ID: `{oid}`", parse_mode="Markdown")
+        waiting[ADMIN_ID] = oid
+        await update.message.reply_text(f"📁 ফাইল পাঠান ID: `{oid}`")
 
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID or ADMIN_ID not in waiting: return
-    oid = waiting.pop(ADMIN_ID); order_info = orders.get(oid)
     
-    order_more_kb = InlineKeyboardMarkup([[InlineKeyboardButton("🛒 আরও অর্ডার করুন (Order More)", callback_data="back_to_start")]])
+    oid = waiting.pop(ADMIN_ID)
+    if oid not in orders: return
+    
+    order_info = orders[oid]
+    order_more_kb = InlineKeyboardMarkup([[InlineKeyboardButton("🛒 আরও অর্ডার করুন", callback_data="back_to_start")]])
 
     caption = (
-        f"✅ *অর্ডার সফলভাবে ডেলিভারি করা হয়েছে!*\n"
+        f"✅ *অর্ডার ডেলিভারি করা হয়েছে!*\n"
         f"━━━━━━━━━━━━━━━━━━\n"
         f"📦 পণ্য: {order_info['name']}\n\n"
-        f"🙏 আমাদের থেকে কেনাকাটা করার জন্য আপনাকে অসংখ্য ধন্যবাদ। ফাইলটি সংগ্রহ করুন।"
+        f"ফাইলটি নিচে দেওয়া হলো।"
     )
     
     await context.bot.send_document(
@@ -206,31 +259,44 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown",
         reply_markup=order_more_kb
     )
-    await update.message.reply_text(f"✅ ফাইল ডেলিভারি সফল ID: {oid}"); del orders[oid]
+    await update.message.reply_text(f"✅ ফাইল ডেলিভারি সফল ID: {oid}")
+    del orders[oid]
 
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
     
     conv = ConversationHandler(
-        entry_points=[CommandHandler("start", start), CallbackQueryHandler(start, pattern="back_to_start")],
+        entry_points=[
+            CommandHandler("start", start),
+            CallbackQueryHandler(start, pattern="^back_to_start$")
+        ],
         states={
-            CHOOSE_CAT: [CallbackQueryHandler(cat_selection, pattern="^cat_"), CallbackQueryHandler(cat_selection, pattern="main_abc"), CallbackQueryHandler(start, pattern="back_to_start")],
-            PAYMENT:    [CallbackQueryHandler(payment_method, pattern="^pay_"), CallbackQueryHandler(start, pattern="back_to_start")],
-            QTY:        [MessageHandler(filters.TEXT & ~filters.COMMAND, get_quantity)],
-            CONFIRM:    [CallbackQueryHandler(process_confirm, pattern="confirm_ok"), CallbackQueryHandler(start, pattern="back_to_start")],
+            CHOOSE_CAT: [
+                CallbackQueryHandler(cat_selection, pattern="^cat_"),
+                CallbackQueryHandler(cat_selection, pattern="^main_abc$"),
+                CallbackQueryHandler(start, pattern="^back_to_start$")
+            ],
+            PAYMENT: [
+                CallbackQueryHandler(payment_method, pattern="^pay_"),
+                CallbackQueryHandler(start, pattern="^back_to_start$")
+            ],
+            QTY: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_quantity)],
+            CONFIRM: [
+                CallbackQueryHandler(process_confirm, pattern="^confirm_ok$"),
+                CallbackQueryHandler(start, pattern="^back_to_start$")
+            ],
             SCREENSHOT: [MessageHandler(filters.PHOTO, get_screenshot)],
-            TXID:       [MessageHandler(filters.TEXT & ~filters.COMMAND, get_txid)],
+            TXID: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_txid)],
         },
         fallbacks=[CommandHandler("start", start)],
-        allow_reentry=True # Allows users to restart conversation while in a state
+        allow_reentry=True
     )
     
-    # এটি কনভারসেশনের বাইরের হ্যান্ডলার যা 'Order More' বাটনের কাজ নিশ্চিত করবে
-    app.add_handler(CallbackQueryHandler(start, pattern="back_to_start"))
     app.add_handler(conv)
-    
     app.add_handler(CommandHandler("approve", approve_order))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
+    # গ্লোবাল কলব্যাক হ্যান্ডলার যাতে অর্ডারের বাইরেও বাটন কাজ করে
+    app.add_handler(CallbackQueryHandler(start, pattern="^back_to_start$"))
     
     print("🤖 বোট সফলভাবে চালু হয়েছে...")
     app.run_polling()
