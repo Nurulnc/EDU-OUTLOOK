@@ -159,6 +159,7 @@ async def get_txid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(ADMIN_ID, admin_instruction, parse_mode="Markdown")
     return ConversationHandler.END
 
+# --- অ্যাডমিন অ্যাপ্রুভ (বট ডেলিভারি মেসেজ আপডেট করা হয়েছে) ---
 async def approve_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
     if not context.args: return
@@ -166,9 +167,19 @@ async def approve_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if oid not in orders: return
     order_info = orders.get(oid)
 
+    # পুনরায় অর্ডার করার জন্য বাটন
+    order_more_kb = InlineKeyboardMarkup([[InlineKeyboardButton("🛒 আরও অর্ডার করুন (Order More)", callback_data="back_to_start")]])
+
     if len(context.args) > 1:
         cd_key = " ".join(context.args[1:])
-        await context.bot.send_message(chat_id=order_info["uid"], text=f"🎉 *ডেলিভারি!*\n📦 পণ্য: {order_info['name']}\n🔑 *Key:* `{cd_key}`", parse_mode="Markdown")
+        text = (
+            f"🎉 *অর্ডার সফলভাবে ডেলিভারি করা হয়েছে!*\n"
+            f"━━━━━━━━━━━━━━━━━━\n"
+            f"📦 পণ্য: {order_info['name']}\n"
+            f"🔑 *Key:* `{cd_key}`\n\n"
+            f"🙏 আমাদের থেকে কেনাকাটা করার জন্য আপনাকে অসংখ্য ধন্যবাদ। আপনার দিনটি শুভ হোক!"
+        )
+        await context.bot.send_message(chat_id=order_info["uid"], text=text, parse_mode="Markdown", reply_markup=order_more_kb)
         await update.message.reply_text(f"✅ Key delivered for ID: {oid}"); del orders[oid]
     else:
         waiting[ADMIN_ID] = oid; await update.message.reply_text(f"📁 ফাইল পাঠান ID: `{oid}`", parse_mode="Markdown")
@@ -176,7 +187,24 @@ async def approve_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID or ADMIN_ID not in waiting: return
     oid = waiting.pop(ADMIN_ID); order_info = orders.get(oid)
-    await context.bot.send_document(chat_id=order_info["uid"], document=update.message.document.file_id, caption=f"✅ *ডেলিভারি!*\n📦 পণ্য: {order_info['name']}")
+    
+    # পুনরায় অর্ডার করার জন্য বাটন
+    order_more_kb = InlineKeyboardMarkup([[InlineKeyboardButton("🛒 আরও অর্ডার করুন (Order More)", callback_data="back_to_start")]])
+
+    caption = (
+        f"✅ *অর্ডার সফলভাবে ডেলিভারি করা হয়েছে!*\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"📦 পণ্য: {order_info['name']}\n\n"
+        f"🙏 আমাদের থেকে কেনাকাটা করার জন্য আপনাকে অসংখ্য ধন্যবাদ। ফাইলটি সংগ্রহ করুন।"
+    )
+    
+    await context.bot.send_document(
+        chat_id=order_info["uid"], 
+        document=update.message.document.file_id, 
+        caption=caption, 
+        parse_mode="Markdown",
+        reply_markup=order_more_kb
+    )
     await update.message.reply_text(f"✅ ফাইল ডেলিভারি সফল ID: {oid}"); del orders[oid]
 
 def main():
