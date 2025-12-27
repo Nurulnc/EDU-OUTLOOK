@@ -94,7 +94,7 @@ async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.update({"method": method, "price": price, "curr": currency})
     instr = f"📍 *পেমেন্ট ডিটেইলস ({method})*\n━━━━━━━━━━━━━━━━━━\n"
     instr += f"📞 নম্বর/আইডি: `{BKASH if method=='বিকাশ' else BINANCE}`\n"
-    instr += f"💵 রেট: {currency}{price}/পিস\n\n✍️ *কয়টি লাগবে?* (সংখ্যা লিখুন)"
+    instr += f"💵 রেট: {currency}{price}/পিস\n\n✍️ *কয়টি লাগবে?* (সংখ্যা লিখুন)"
     await query.edit_message_text(instr, parse_mode="Markdown")
     return QTY
 
@@ -119,34 +119,46 @@ async def get_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     photo_id = update.message.photo[-1].file_id; oid = context.user_data["oid"]
     orders[oid] = {**context.user_data, "uid": update.effective_user.id, "username": update.effective_user.username}
     await update.message.reply_text("✅ এখন পেমেন্টের *TrxID* লিখে পাঠান:")
-    admin_msg = f"🔔 *নতুন অর্ডার!* ({oid})\n👤 ইউজার: @{orders[oid]['username']}\n📦 পণ্য: {orders[oid]['name']}\n💰 মোট: {orders[oid]['curr']}{orders[oid]['total']}"
+    admin_msg = (
+        f"🔔 *নতুন অর্ডার!* \n"
+        f"🆔 ID: `{oid}`\n"
+        f"👤 ইউজার: @{orders[oid]['username']}\n"
+        f"📦 পণ্য: {orders[oid]['name']}\n"
+        f"💰 মোট: {orders[oid]['curr']}{orders[oid]['total']}"
+    )
     await context.bot.send_photo(ADMIN_ID, photo_id, caption=admin_msg, parse_mode="Markdown")
     return TXID
 
-# --- এখানে ইউজার ওয়েটিং মেসেজে সাপোর্ট বাটন যোগ করা হয়েছে ---
 async def get_txid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     txid = update.message.text.strip()
     oid = context.user_data["oid"]
     
-    # ইউজারকে সাপোর্ট এবং চ্যানেলের বাটন দেখানো
     kb = [
         [InlineKeyboardButton("👨‍💻 Contact Support", url=SUPPORT_BOT)],
         [InlineKeyboardButton("📢 Join Update Channel", url=UPDATE_CHANNEL)]
     ]
     
     await update.message.reply_text(
-        f"✅ *অর্ডার জমা হয়েছে!*\n\n"
+        f"✅ *অর্ডার জমা হয়েছে!*\n\n"
         f"🆔 অর্ডার আইডি: `{oid}`\n"
         f"⏳ স্ট্যাটাস: ভেরিফিকেশন চলছে...\n\n"
-        f"অ্যাডমিন আপনার পেমেন্ট চেক করে কিছুক্ষণের মধ্যে ডেলিভারি দিবে। কোনো প্রশ্ন থাকলে সাপোর্ট বাটনে ক্লিক করুন।",
+        f"অ্যাডমিন আপনার পেমেন্ট চেক করে কিছুক্ষণের মধ্যে ডেলিভারি দিবে।",
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup(kb)
     )
     
-    await context.bot.send_message(ADMIN_ID, f"💸 *TrxID জমা পড়েছে!*\nID: `{oid}`\nTrxID: `{txid}`\n\n✅ Approve (Key): `/approve {oid} KEY` \n📁 Approve (File): `/approve {oid}`")
+    # অ্যাডমিনের জন্য ক্লিক-টু-কপি ফরম্যাট
+    admin_instruction = (
+        f"💸 *TrxID জমা পড়েছে!*\n"
+        f"🆔 ID: `{oid}`\n"
+        f"🔗 TrxID: `{txid}`\n\n"
+        f"👇 *Click to Copy Commands:*\n"
+        f"✅ Key: `/approve {oid} `\n"
+        f"📁 File: `/approve {oid}`"
+    )
+    await context.bot.send_message(ADMIN_ID, admin_instruction, parse_mode="Markdown")
     return ConversationHandler.END
 
-# --- অ্যাডমিন অ্যাপ্রুভ (বাকি সব আগের মতই) ---
 async def approve_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
     if not context.args: return
@@ -157,15 +169,15 @@ async def approve_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) > 1:
         cd_key = " ".join(context.args[1:])
         await context.bot.send_message(chat_id=order_info["uid"], text=f"🎉 *ডেলিভারি!*\n📦 পণ্য: {order_info['name']}\n🔑 *Key:* `{cd_key}`", parse_mode="Markdown")
-        await update.message.reply_text(f"✅ Key delivered: {oid}"); del orders[oid]
+        await update.message.reply_text(f"✅ Key delivered for ID: {oid}"); del orders[oid]
     else:
-        waiting[ADMIN_ID] = oid; await update.message.reply_text(f"📁 ফাইল পাঠান: {oid}")
+        waiting[ADMIN_ID] = oid; await update.message.reply_text(f"📁 ফাইল পাঠান ID: `{oid}`", parse_mode="Markdown")
 
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID or ADMIN_ID not in waiting: return
     oid = waiting.pop(ADMIN_ID); order_info = orders.get(oid)
     await context.bot.send_document(chat_id=order_info["uid"], document=update.message.document.file_id, caption=f"✅ *ডেলিভারি!*\n📦 পণ্য: {order_info['name']}")
-    await update.message.reply_text(f"✅ ফাইল ডেলিভারি সফল: {oid}"); del orders[oid]
+    await update.message.reply_text(f"✅ ফাইল ডেলিভারি সফল ID: {oid}"); del orders[oid]
 
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
