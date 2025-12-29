@@ -71,8 +71,8 @@ async def cat_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data == "back_to_start": return await start(update, context)
     if query.data == "main_abc":
         buttons = [
-            [InlineKeyboardButton("🚀 1GB Proxy - 200 TK", callback_data="cat_abc_1gb")],
-            [InlineKeyboardButton("🚀 2GB Proxy - 380 TK", callback_data="cat_abc_2gb")],
+            [InlineKeyboardButton("🚀 1GB Proxy - 180 TK", callback_data="cat_abc_1gb")],
+            [InlineKeyboardButton("🚀 2GB Proxy - 360 TK", callback_data="cat_abc_2gb")],
             [InlineKeyboardButton("🔙 ফিরে যান", callback_data="back_to_start")]
         ]
         await query.edit_message_text("📂 *ABCProxy সাব-ক্যাটাগরি:*", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(buttons))
