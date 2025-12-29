@@ -29,6 +29,7 @@ PRODUCTS = {
     "android":       {"name": "📩 Android Studio Mail", "bkash": 5, "binance": 0.04},
     "outlook_trust": {"name": "📧 Outlook Trust", "bkash": 2, "binance": 0.016},
     "hma_vpn":       {"name": "🔒 HMA VPN (7 দিন)", "bkash": 30, "binance": 0.24},
+     "Hotspot_shield":       {"name": "🔒 Hotspot shield", "bkash": 30, "binance": 0.24},
     "nord_vpn":      {"name": "🔒 Nord VPN (7 দিন)", "bkash": 30, "binance": 0.24},
     "express_vpn":   {"name": "🔒 Express VPN (7 দিন)", "bkash": 30, "binance": 0.24},
     "abc_1gb":       {"name": "🚀 ABCProxy 1GB", "bkash": 200, "binance": 1.70, "is_proxy": True},
