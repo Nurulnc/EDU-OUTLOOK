@@ -32,8 +32,8 @@ PRODUCTS = {
      "Hotspot_shield":       {"name": "🔒 Hotspot shield", "bkash": 30, "binance": 0.24},
     "nord_vpn":      {"name": "🔒 Nord VPN (7 দিন)", "bkash": 30, "binance": 0.24},
     "express_vpn":   {"name": "🔒 Express VPN (7 দিন)", "bkash": 30, "binance": 0.24},
-    "abc_1gb":       {"name": "🚀 ABCProxy 1GB", "bkash": 200, "binance": 1.70, "is_proxy": True},
-    "abc_2gb":       {"name": "🚀 ABCProxy 2GB", "bkash": 380, "binance": 3.20, "is_proxy": True},
+    "abc_1gb":       {"name": "🚀 ABCProxy 1GB", "bkash": 180, "binance": 1.44, "is_proxy": True},
+    "abc_2gb":       {"name": "🚀 ABCProxy 2GB", "bkash": 360, "binance": 2.88, "is_proxy": True},
 }
 
 # States
