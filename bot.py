@@ -23,83 +23,117 @@ BINANCE = "38017799"
 SUPPORT_BOT = "https://t.me/mailmarketplaceSupport_bot"
 UPDATE_CHANNEL = "https://t.me/mailmarketplace"
 
+# ডেটাবেস স্ট্রাকচার
 PRODUCTS = {
-    "hotmail_trust": {"name": "📬 Hotmail Trust", "bkash": 2, "binance": 0.016},
-    "edu":           {"name": "🎓 .EDU Mail (US)", "bkash": 1, "binance": 0.008},
-    "android":       {"name": "📩 Android Studio Mail", "bkash": 5, "binance": 0.04},
-    "outlook_trust": {"name": "📧 Outlook Trust", "bkash": 2, "binance": 0.016},
-    "hma_vpn":       {"name": "🔒 HMA VPN (7 দিন)", "bkash": 30, "binance": 0.24},
-    "Hotspot_shield":       {"name": "🔒 Hotspot shield", "bkash": 30, "binance": 0.24},
-    "Surfshark_vpn":    {"name": "🔒 Surfshark Vpn", "bkash": 30, "binance": 0.24},
-    "Cyberghost_vpn":       {"name": "🔒 Cyberghost Vpn", "bkash": 30, "binance": 0.24},
-    "Ipvanish_vpn":       {"name": "🔒 IPVanish Vpn", "bkash": 30, "binance": 0.24},
-    "nord_vpn":      {"name": "🔒 Nord VPN (7 দিন)", "bkash": 30, "binance": 0.24},
-    "express_vpn":   {"name": "🔒 Express VPN (7 দিন)", "bkash": 30, "binance": 0.24},
-    "abc_1gb":       {"name": "🚀 ABCProxy 1GB", "bkash": 180, "binance": 1.44, "is_proxy": True},
-    "abc_2gb":       {"name": "🚀 ABCProxy 2GB", "bkash": 360, "binance": 2.88, "is_proxy": True},
+    # Mails
+    "hotmail_trust": {"name": "📬 Hotmail Trust", "bkash": 2, "binance": 0.016, "cat": "mail"},
+    "outlook_trust": {"name": "📧 Outlook Trust", "bkash": 2, "binance": 0.016, "cat": "mail"},
+    "edu_24": {"name": "🎓 EDU Mail (24hr Live)", "bkash": 1, "binance": 0.08, "cat": "mail_edu"},
+    "edu_72": {"name": "🎓 EDU Mail (72hr Live)", "bkash": 2, "binance": 0.016, "cat": "mail_edu"},
+    "android": {"name": "📩 Android Studio Mail", "bkash": 3, "binance": 0.024, "cat": "mail"},
+    
+    # VPNs (নতুন ভিপিএনগুলো এখানে যোগ করা হয়েছে)
+    "hma_vpn": {"name": "🔒 HMA VPN (7 দিন)", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "nord_vpn": {"name": "🔒 Nord VPN (7 দিন)", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "express_vpn": {"name": "🔒 Express VPN (7 দিন)", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "surfshark": {"name": "🔒 Surfshark VPN", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "cyberghost": {"name": "🔒 Cyberghost VPN", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "avast_vpn": {"name": "🔒 Avast SecureLine VPN", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "avg_vpn": {"name": "🔒 AVG Secure VPN", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "bitdefender": {"name": "🔒 Bitdefender VPN", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "potato_vpn": {"name": "🔒 Potato VPN", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "vyper_vpn": {"name": "🔒 VyprVPN", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "pia_vpn": {"name": "🔒 PIA VPN (Private Internet Access)", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "ipvanish": {"name": "🔒 IPVanish VPN", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    "hotspot": {"name": "🔒 Hotspot Shield", "bkash": 30, "binance": 0.24, "cat": "vpn"},
+    
+    # Proxies
+    "abc_1gb": {"name": "🚀 ABCProxy 1GB", "bkash": 180, "binance": 1.44, "cat": "proxy"},
+    "abc_2gb": {"name": "🚀 ABCProxy 2GB", "bkash": 360, "binance": 2.88, "cat": "proxy"},
 }
 
 # States
-CHOOSE_CAT, PAYMENT, QTY, CONFIRM, SCREENSHOT, TXID = range(6)
+MAIN_MENU, SUB_MENU, PAYMENT, QTY, CONFIRM, SCREENSHOT, TXID = range(7)
 orders = {}
 waiting = {}
 
-# --- ইউটিলিটি ফাংশন ---
-def get_main_menu():
-    buttons = []
-    for key, info in PRODUCTS.items():
-        if "is_proxy" not in info:
-            buttons.append([InlineKeyboardButton(info["name"], callback_data=f"cat_{key}")])
-    buttons.append([InlineKeyboardButton("📦 ABCProxy (Residential)", callback_data="main_abc")])
-    return InlineKeyboardMarkup(buttons)
+# --- কিবোর্ড ফাংশনস ---
+def main_menu_kb():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📧 Buy Mail", callback_data="cat_mail"), InlineKeyboardButton("🔒 Buy VPN", callback_data="cat_vpn")],
+        [InlineKeyboardButton("🚀 Buy Proxy", callback_data="cat_proxy")],
+        [InlineKeyboardButton("👨‍💻 সাপোর্ট", url=SUPPORT_BOT), InlineKeyboardButton("📢 চ্যানেল", url=UPDATE_CHANNEL)]
+    ])
+
+def back_button():
+    return [InlineKeyboardButton("🔙 ফিরে যান", callback_data="back_to_main")]
 
 # --- হ্যান্ডলারস ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data.clear()
-    welcome_text = (
-        "👋 *স্বাগতম আমাদের শপে!*\n\n"
-        "প্রিমিয়াম মেইল, ভিপিএন এবং প্রক্সি পাবেন সাশ্রয়ী মূল্যে।\n\n"
-        "🛒 *সার্ভিস বেছে নিন:*"
-    )
+    text = "👋 *স্বাগতম আমাদের শপে!*\n\nপ্রিমিয়াম সার্ভিস পেতে নিচের ক্যাটাগরি বেছে নিন।"
     if update.callback_query:
-        await update.callback_query.answer()
-        await update.callback_query.edit_message_text(welcome_text, parse_mode="Markdown", reply_markup=get_main_menu())
+        await update.callback_query.edit_message_text(text, reply_markup=main_menu_kb(), parse_mode="Markdown")
     else:
-        await update.message.reply_text(welcome_text, parse_mode="Markdown", reply_markup=get_main_menu())
-    return CHOOSE_CAT
+        await update.message.reply_text(text, reply_markup=main_menu_kb(), parse_mode="Markdown")
+    return MAIN_MENU
 
-async def cat_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_categories(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    if query.data == "back_to_start": return await start(update, context)
-    if query.data == "main_abc":
-        buttons = [
-            [InlineKeyboardButton("🚀 1GB Proxy - 180 TK", callback_data="cat_abc_1gb")],
-            [InlineKeyboardButton("🚀 2GB Proxy - 360 TK", callback_data="cat_abc_2gb")],
-            [InlineKeyboardButton("🔙 ফিরে যান", callback_data="back_to_start")]
-        ]
-        await query.edit_message_text("📂 *ABCProxy সাব-ক্যাটাগরি:*", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(buttons))
-        return CHOOSE_CAT
-    cat_key = query.data.replace("cat_", "")
-    product = PRODUCTS[cat_key]
-    context.user_data.update({"key": cat_key, "name": product["name"]})
-    kb = [[InlineKeyboardButton("💳 বিকাশ", callback_data="pay_bkash"), InlineKeyboardButton("💳 বিনান্স", callback_data="pay_binance")],
-          [InlineKeyboardButton("🔙 ফিরে যান", callback_data="back_to_start")]]
-    await query.edit_message_text(f"✨ *সার্ভিস:* {product['name']}\n💰 বিকাশ: {product['bkash']} BDT\n💰 বিনান্স: ${product['binance']}\n\n💳 পেমেন্ট মেথড বেছে নিন:", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
+    choice = query.data.replace("cat_", "")
+
+    buttons = []
+    # ফিল্টার করে শুধুমাত্র নির্দিষ্ট ক্যাটাগরির প্রোডাক্ট দেখানো
+    if choice == "mail":
+        buttons.append([InlineKeyboardButton("🎓 .EDU Mails (Special)", callback_data="cat_mail_edu")])
+        for k, v in PRODUCTS.items():
+            if v['cat'] == "mail": buttons.append([InlineKeyboardButton(v['name'], callback_data=f"buy_{k}")])
+    
+    elif choice == "mail_edu":
+        for k, v in PRODUCTS.items():
+            if v['cat'] == "mail_edu": buttons.append([InlineKeyboardButton(v['name'], callback_data=f"buy_{k}")])
+
+    elif choice == "vpn":
+        # ভিপিএন লিস্ট বড় হওয়ায় ২ কলামে সাজানো
+        vpn_items = [InlineKeyboardButton(v['name'], callback_data=f"buy_{k}") for k, v in PRODUCTS.items() if v['cat'] == "vpn"]
+        for i in range(0, len(vpn_items), 2):
+            buttons.append(vpn_items[i:i+2])
+
+    elif choice == "proxy":
+        for k, v in PRODUCTS.items():
+            if v['cat'] == "proxy": buttons.append([InlineKeyboardButton(v['name'], callback_data=f"buy_{k}")])
+
+    buttons.append(back_button())
+    await query.edit_message_text(f"📂 *{choice.replace('_',' ').upper()} সেকশন:*", 
+                                  reply_markup=InlineKeyboardMarkup(buttons), parse_mode="Markdown")
+    return SUB_MENU
+
+# --- বাকি হ্যান্ডলারগুলো (payment, qty, confirm, admin) আগের মতোই থাকবে ---
+# [ আগের কোডের handle_selection, payment_method, get_quantity, process_confirm, 
+#   get_screenshot, get_txid, approve_order, handle_document ফাংশনগুলো এখানে বসবে ]
+
+# ... (নিচে মেইন ফাংশনটি দিয়ে দিচ্ছি যাতে কোনো এরর না আসে) ...
+
+async def handle_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    if query.data == "back_to_main": return await start(update, context)
+    prod_key = query.data.replace("buy_", "")
+    product = PRODUCTS[prod_key]
+    context.user_data.update({"key": prod_key, "name": product["name"]})
+    kb = [[InlineKeyboardButton("💳 বিকাশ", callback_data="pay_bkash"), InlineKeyboardButton("💳 বিনান্স", callback_data="pay_binance")], [InlineKeyboardButton("🔙 ফিরে যান", callback_data="back_to_main")]]
+    await query.edit_message_text(f"✨ *সার্ভিস:* {product['name']}\n💰 বিকাশ: {product['bkash']} BDT\n💰 বিনান্স: ${product['binance']}\n\nপেমেন্ট মেথড বেছে নিন:", reply_markup=InlineKeyboardMarkup(kb), parse_mode="Markdown")
     return PAYMENT
 
 async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    if query.data == "back_to_start": return await start(update, context)
-    method = "বিকাশ" if query.data == "pay_bkash" else "বিনান্স পে"
+    method = "বিকাশ" if "bkash" in query.data else "বিনান্স পে"
     key = context.user_data["key"]
     price = PRODUCTS[key]["bkash" if "bkash" in query.data else "binance"]
     currency = "৳" if "bkash" in query.data else "$"
     context.user_data.update({"method": method, "price": price, "curr": currency})
-    instr = f"📍 *পেমেন্ট ডিটেইলস ({method})*\n━━━━━━━━━━━━━━━━━━\n" \
-            f"📞 নম্বর/আইডি: `{BKASH if method=='বিকাশ' else BINANCE}`\n" \
-            f"💵 রেট: {currency}{price}/পিস\n\n✍️ *কয়টি লাগবে?* (শুধু সংখ্যা লিখুন)"
+    instr = f"📍 *পেমেন্ট ডিটেইলস ({method})*\n━━━━━━━━━━━━━━━━━━\n📞 আইডি: `{BKASH if method=='বিকাশ' else BINANCE}`\n💵 রেট: {currency}{price}/পিস\n\n✍️ *কয়টি লাগবে?* (শুধু সংখ্যা লিখুন)"
     await query.edit_message_text(instr, parse_mode="Markdown")
     return QTY
 
@@ -111,17 +145,15 @@ async def get_quantity(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["qty"] = qty
     total = round(qty * context.user_data["price"], 3)
     context.user_data["total"] = total
-    summary = (f"📝 *অর্ডারের বিবরণ*\n📦 পণ্য: {context.user_data['name']}\n🔢 পরিমাণ: {qty} টি\n💰 মোট: {context.user_data['curr']}{total}\n\n✅ নিশ্চিত করতে চান?")
-    kb = [[InlineKeyboardButton("✅ হ্যাঁ", callback_data="confirm_ok"), InlineKeyboardButton("❌ বাতিল", callback_data="back_to_start")]]
+    summary = f"📝 *অর্ডারের বিবরণ*\n📦 পণ্য: {context.user_data['name']}\n🔢 পরিমাণ: {qty} টি\n💰 মোট: {context.user_data['curr']}{total}\n\n✅ নিশ্চিত করতে চান?"
+    kb = [[InlineKeyboardButton("✅ হ্যাঁ", callback_data="confirm_ok"), InlineKeyboardButton("❌ বাতিল", callback_data="back_to_main")]]
     await update.message.reply_text(summary, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
     return CONFIRM
 
 async def process_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
     oid = str(uuid4())[:8].upper()
     context.user_data["oid"] = oid
-    await query.edit_message_text(f"🚀 *অর্ডার আইডি:* `{oid}`\nএখন পেমেন্ট স্ক্রিনশট পাঠান।", parse_mode="Markdown")
+    await update.callback_query.edit_message_text(f"🚀 *অর্ডার আইডি:* `{oid}`\nএখন পেমেন্ট স্ক্রিনশট পাঠান।", parse_mode="Markdown")
     return SCREENSHOT
 
 async def get_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -138,64 +170,46 @@ async def get_txid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     txid = update.message.text.strip()
     oid = context.user_data["oid"]
     kb = [[InlineKeyboardButton("👨‍💻 সাপোর্ট", url=SUPPORT_BOT), InlineKeyboardButton("📢 আপডেট", url=UPDATE_CHANNEL)]]
-    await update.message.reply_text(f"✅ *অর্ডার জমা হয়েছে!*\n🆔 আইডি: `{oid}`\n⏳ স্ট্যাটাস: ভেরিফিকেশন চলছে...", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
-    admin_instr = f"💸 *TrxID জমা পড়েছে!*\n🆔 ID: `{oid}`\n🔗 TrxID: `{txid}`\n\n✅ Key: `/approve {oid} key` \n📁 File: `/approve {oid}`"
+    await update.message.reply_text(f"✅ *অর্ডার জমা হয়েছে!*\n🆔 আইডি: `{oid}`\n⏳ স্ট্যাটাস: ভেরিফিকেশন চলছে...", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
+    admin_instr = f"💸 *TrxID জমা পড়েছে!*\n🆔 ID: `{oid}`\n🔗 TrxID: `{txid}`\n\n✅ `/approve {oid} key` \n📁 ফাইল পাঠাতে ফাইলটি সরাসরি আপলোড দিন।"
     await context.bot.send_message(ADMIN_ID, admin_instr, parse_mode="Markdown")
     return ConversationHandler.END
 
-# --- অ্যাডমিন ডেলিভারি ---
 async def approve_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID or not context.args: return
     oid = context.args[0].upper()
     if oid not in orders: return
     order_info = orders[oid]
-    order_more_kb = InlineKeyboardMarkup([[InlineKeyboardButton("🛒 আরও অর্ডার করুন", callback_data="back_to_start")]])
-
     if len(context.args) > 1:
         cd_key = " ".join(context.args[1:])
-        text = (
-            f"🎉 *অর্ডার সফলভাবে ডেলিভারি করা হয়েছে!*\n"
-            f"━━━━━━━━━━━━━━━━━━\n"
-            f"📦 *পণ্য:* {order_info['name']}\n"
-            f"🔑 *Key:* `{cd_key}`\n\n"
-            f"✨ 𝓣𝓱𝓪𝓷𝓴 𝔂𝓸𝓾 𝓯𝓸𝓻 𝔂𝓸𝓾𝓻 𝓟𝓾𝓻𝓬𝓱𝓪𝓼𝓮! ✨\n"
-            f"আমাদের সাথে কেনাকাটা করার জন্য ধন্যবাদ।"
-        )
-        await context.bot.send_message(chat_id=order_info["uid"], text=text, parse_mode="Markdown", reply_markup=order_more_kb)
-        await update.message.reply_text(f"✅ Key delivered: {oid}")
+        text = f"🎉 *অর্ডার ডেলিভারি!*\n📦 পণ্য: {order_info['name']}\n🔑 Key: `{cd_key}`"
+        await context.bot.send_message(chat_id=order_info["uid"], text=text, parse_mode="Markdown")
+        await update.message.reply_text(f"✅ Delivered: {oid}")
         del orders[oid]
     else:
         waiting[ADMIN_ID] = oid
-        await update.message.reply_text(f"📁 ফাইল পাঠান ID: `{oid}`")
+        await update.message.reply_text(f"📁 ফাইল পাঠান ID: {oid}")
 
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID or ADMIN_ID not in waiting: return
     oid = waiting.pop(ADMIN_ID)
-    if oid not in orders: return
-    order_info = orders[oid]
-    order_more_kb = InlineKeyboardMarkup([[InlineKeyboardButton("🛒 আরও অর্ডার করুন", callback_data="back_to_start")]])
-    caption = (
-        f"✅ *অর্ডার সফলভাবে ডেলিভারি করা হয়েছে!*\n"
-        f"━━━━━━━━━━━━━━━━━━\n"
-        f"📦 *পণ্য:* {order_info['name']}\n\n"
-        f"✨ 𝓣𝓱𝓪𝓷𝓴 𝔂𝓸𝓾 𝓯𝓸𝓻 𝔂𝓸𝓾𝓻 𝓟𝓾𝓻𝓬𝓱𝓪𝓼𝓮! ✨\n"
-        f"আপনার অর্ডারটি সংগ্রহ করুন। ধন্যবাদ!"
-    )
-    await context.bot.send_document(chat_id=order_info["uid"], document=update.message.document.file_id, caption=caption, parse_mode="Markdown", reply_markup=order_more_kb)
-    await update.message.reply_text(f"✅ ফাইল ডেলিভারি সফল ID: {oid}")
-    del orders[oid]
+    order_info = orders.pop(oid, None)
+    if order_info:
+        await context.bot.send_document(chat_id=order_info["uid"], document=update.message.document.file_id, caption=f"✅ *আপনার ফাইল ডেলিভারি!* \n📦 পণ্য: {order_info['name']}", parse_mode="Markdown")
+        await update.message.reply_text(f"✅ ফাইল পাঠানো হয়েছে: {oid}")
 
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
     conv = ConversationHandler(
-        entry_points=[CommandHandler("start", start), CallbackQueryHandler(start, pattern="^back_to_start$")],
+        entry_points=[CommandHandler("start", start), CallbackQueryHandler(start, pattern="^back_to_main$")],
         states={
-            CHOOSE_CAT: [CallbackQueryHandler(cat_selection, pattern="^cat_"), CallbackQueryHandler(cat_selection, pattern="^main_abc$"), CallbackQueryHandler(start, pattern="^back_to_start$")],
-            PAYMENT:    [CallbackQueryHandler(payment_method, pattern="^pay_"), CallbackQueryHandler(start, pattern="^back_to_start$")],
-            QTY:        [MessageHandler(filters.TEXT & ~filters.COMMAND, get_quantity)],
-            CONFIRM:    [CallbackQueryHandler(process_confirm, pattern="^confirm_ok$"), CallbackQueryHandler(start, pattern="^back_to_start$")],
-            SCREENSHOT: [MessageHandler(filters.PHOTO, get_screenshot)],
-            TXID:       [MessageHandler(filters.TEXT & ~filters.COMMAND, get_txid)],
+            MAIN_MENU: [CallbackQueryHandler(handle_categories, pattern="^cat_")],
+            SUB_MENU:  [CallbackQueryHandler(handle_selection, pattern="^buy_"), CallbackQueryHandler(handle_categories, pattern="^cat_"), CallbackQueryHandler(start, pattern="^back_to_main$")],
+            PAYMENT:   [CallbackQueryHandler(payment_method, pattern="^pay_"), CallbackQueryHandler(start, pattern="^back_to_main$")],
+            QTY:       [MessageHandler(filters.TEXT & ~filters.COMMAND, get_quantity)],
+            CONFIRM:   [CallbackQueryHandler(process_confirm, pattern="^confirm_ok$"), CallbackQueryHandler(start, pattern="^back_to_main$")],
+            SCREENSHOT:[MessageHandler(filters.PHOTO, get_screenshot)],
+            TXID:      [MessageHandler(filters.TEXT & ~filters.COMMAND, get_txid)],
         },
         fallbacks=[CommandHandler("start", start)],
         allow_reentry=True
@@ -203,8 +217,7 @@ def main():
     app.add_handler(conv)
     app.add_handler(CommandHandler("approve", approve_order))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
-    app.add_handler(CallbackQueryHandler(start, pattern="^back_to_start$"))
-    print("🤖 বোট চালু হয়েছে...")
+    print("🤖 বোট রান হচ্ছে...")
     app.run_polling()
 
 if __name__ == "__main__":
