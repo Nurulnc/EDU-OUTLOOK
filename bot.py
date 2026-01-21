@@ -26,13 +26,13 @@ UPDATE_CHANNEL = "https://t.me/mailmarketplace"
 # PRODUCTS DATABASE
 PRODUCTS = {
     # Mails (Main Category: mail)
-    "hotmail_trust": {"name": "📬 Hotmail Trust", "bkash": 2, "binance": 0.016, "cat": "mail"},
-    "outlook_trust": {"name": "📧 Outlook Trust", "bkash": 2, "binance": 0.016, "cat": "mail"},
+    "hotmail_trust": {"name": "📬 Hotmail Trust", "bkash": 2.5, "binance": 0.02, "cat": "mail"},
+    "outlook_trust": {"name": "📧 Outlook Trust", "bkash": 2.5, "binance": 0.02, "cat": "mail"},
     "android": {"name": "📩 Android Studio Mail", "bkash": 3, "binance": 0.024, "cat": "mail"},
     
     # EDU Mails (Sub Category: mail_edu)
-    "edu_24": {"name": "🎓 EDU Mail (24hr Live)", "bkash": 1, "binance": 0.008, "cat": "mail_edu"},
-    "edu_72": {"name": "🎓 EDU Mail (72hr Live)", "bkash": 2, "binance": 0.016, "cat": "mail_edu"},
+    "edu_24": {"name": "🎓 EDU Mail (24hr Live)", "bkash": 1.5, "binance": 0.012, "cat": "mail_edu"},
+    "edu_72": {"name": "🎓 EDU Mail (72hr Live)", "bkash": 2.5, "binance": 0.02, "cat": "mail_edu"},
     
     # VPNs (Main Category: vpn)
     "hma_vpn": {"name": "🔒 HMA VPN", "bkash": 30, "binance": 0.24, "cat": "vpn"},
